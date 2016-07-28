@@ -28,13 +28,13 @@ class BioParser
     
     File.readlines(organism_bio_file).each do |line|
       if HEADERS.include?(line.strip)
-        self.state = line.strip.gsub("[","").gsub("]","") 
+        self.state = line.strip.sub("[","").sub("]","") 
         next
       end
       parse_line(line)
     end
-    result["tax_groups_2_id"] = save_tax_data!
-    return result.delete_if { |key| !["tax_groups_2_id",ORGANISMS].include?(key) } 
+    result[ORGANISMS]["id_tax_groups2"] = save_tax_data!
+    return result[ORGANISMS]
   end
 
   def parse_line(line)
