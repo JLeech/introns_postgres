@@ -13,8 +13,10 @@ class Dbfiller
 
   def load_organism
     bio_parser = BioParser.new(organism_path,connection)
-    tax_groups2_id = bio_parser.parse
+    additional_organism_data = bio_parser.parse
+    puts "#{additional_organism_data}"
   end
+
 
 end
 

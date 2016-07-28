@@ -5,12 +5,12 @@ class BioParser
   attr_accessor :result
   attr_accessor :state
 
-  ORGANISMS = "[organisms]"
-  TAX_KINGDOMS = "[tax_kingdoms]"
-  TAX_GROUPS_1 = "[tax_groups1]"
-  TAX_GROUPS_2 = "[tax_groups2]"
+  ORGANISMS = "organisms"
+  TAX_KINGDOMS = "tax_kingdoms"
+  TAX_GROUPS_1 = "tax_groups1"
+  TAX_GROUPS_2 = "tax_groups2"
   START = "start"
-  HEADERS = [ORGANISMS,TAX_KINGDOMS,TAX_GROUPS_1,TAX_GROUPS_2]
+  HEADERS = [ORGANISMS,TAX_KINGDOMS,TAX_GROUPS_1,TAX_GROUPS_2].map{ |val| "[#{val}]" }
 
   def initialize(organism_path, connector)
     self.organism_path = organism_path
@@ -34,7 +34,7 @@ class BioParser
       parse_line(line)
     end
     result["tax_groups_2_id"] = save_tax_data!
-    return result
+    return result.delete_if { |key| !["tax_groups_2_id",ORGANISMS].include?(key) } 
   end
 
   def parse_line(line)
