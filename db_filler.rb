@@ -3,18 +3,18 @@ require_relative 'bio_parser'
 
 class Dbfiller
 
-	attr_accessor :organism_path
-	attr_accessor :connection
+  attr_accessor :organism_path
+  attr_accessor :connection
 
-	def initialize (organism_path, db_name, user_name)
-		self.organism_path = organism_path
-		self.connection = PG.connect :dbname => db_name, :user => user_name
-	end
+  def initialize (organism_path, db_name, user_name)
+    self.organism_path = organism_path
+    self.connection = PG.connect :dbname => db_name, :user => user_name
+  end
 
-	def load_organism
-		bio_parser = BioParser.new(organism_path,connection)
-		tax_groups2_id = bio_parser.parse
-	end
+  def load_organism
+    bio_parser = BioParser.new(organism_path,connection)
+    tax_groups2_id = bio_parser.parse
+  end
 
 end
 
