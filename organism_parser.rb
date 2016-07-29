@@ -40,7 +40,7 @@ class OrganismParser
       organism_data_from_gbk = gb.source
       organism_data[TAXONOMY_LIST] = organism_data_from_gbk["taxonomy"]
       self.organism_data[TAXONOMY_XREF] = extract_taxonomy_xref(gb)
-      sequence_parser = SequenceParser.new(gb, file_name, organism_name)
+      sequence_parser = SequenceParser.new(gb, file_name, organism_name, db_manager, id_manager)
       sequence_parser.parse
     end
   end

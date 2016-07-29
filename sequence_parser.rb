@@ -6,20 +6,25 @@ class SequenceParser
 
   attr_accessor :data
   attr_accessor :sequence_data
-  attr_accessor :organism_name
+  attr_accessor :organism_name 
+  attr_accessor :db_manager
+  attr_accessor :id_manager
 
-  def initialize(data, source_file, organism_name)
+  def initialize(data, source_file, organism_name, db_manager, id_manager)
     self.data = data
     self.sequence_data = {"source_file_name" => source_file}
     self.organism_name = organism_name
+    self.db_manager = db_manager
+    self.id_manager = id_manager
   end
 
   def parse
+    self.sequence_data["id"] = id_manager.inc_and_get_seq_id
     self.sequence_data["refseq_id"] = data.locus.entry_id
     self.sequence_data["version"] = data.versions.join("\n")
     self.sequence_data["description"] = data.definition
     self.sequence_data["origin_file_name"] = origin_file_name 
-    gene_parser = GeneParser.new(data)
+    gene_parser = GeneParser.new(data, db_manager, id_manager)
     gene_parser.parse_genes
   end
 
@@ -29,13 +34,16 @@ class SequenceParser
 
 end
 
-
 class GeneParser
 
   attr_accessor :data
+  attr_accessor :db_manager
+  attr_accessor :id_manager
 
-  def initialize(data)
+  def initialize(data, db_manager, id_manager)
     self.data = data
+    self.db_manager = db_manager
+    self.id_manager = id_manager
   end
 
   def parse_genes
@@ -43,13 +51,14 @@ class GeneParser
       if feature.feature == "gene"
         gene_data = {}
         feature_data = feature.assoc
+        gene_data["id"] = id_manager.inc_and_get_gene_id
         gene_data["name"] = feature_data["gene"]
         gene_data["pseudo_gene"] = !(feature_data.keys & ["pseudo","pseudogene"]).empty?
         location = Bio::Locations.new(feature.position)
         gene_data["startt"] = location.first.from
         gene_data["endd"] = location.last.to
         gene_data["backward_chain"] = -1 == location.first.strand
-        puts "#{gene_data}"
+        #puts "#{gene_data}"
       end
     end
   end

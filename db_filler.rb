@@ -18,10 +18,9 @@ class Dbfiller
     gbk_parser.parse
   end
 
-
 end
 
-organism_path = "/home/eve/Документы/biology/load_data/Anolis_carolinensis"
-#organism_path = "/home/eve/Документы/biology/load_data/Gorilla_gorilla"
+#organism_path = "/home/eve/Документы/biology/load_data/Anolis_carolinensis"
+organism_path = "/home/eve/Документы/biology/load_data/Gorilla_gorilla"
 db_filler = Dbfiller.new(organism_path, "mydb", "eve")
 db_filler.load_organism
