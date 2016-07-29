@@ -1,7 +1,7 @@
 class BioParser
 
   attr_accessor :organism_path
-  attr_accessor :connector
+  attr_accessor :connection
   attr_accessor :result
   attr_accessor :state
 
@@ -12,9 +12,9 @@ class BioParser
   START = "start"
   HEADERS = [ORGANISMS,TAX_KINGDOMS,TAX_GROUPS_1,TAX_GROUPS_2].map{ |val| "[#{val}]" }
 
-  def initialize(organism_path, connector)
+  def initialize(organism_path, db_manager)
     self.organism_path = organism_path
-    self.connector = connector
+    self.connection = db_manager.connection
     self.state = START
     self.result = Hash.new { |hash, key| hash[key] = {} }
   end
@@ -45,7 +45,7 @@ class BioParser
   end
 
   def save_tax_data!
-    bio_base = BioBase.new(result, connector)
+    bio_base = BioBase.new(result, connection)
     return bio_base.save!
   end
 
@@ -56,12 +56,12 @@ end
 class BioBase
 
   attr_accessor :data
-  attr_accessor :connector
+  attr_accessor :connection
   attr_accessor :inserted_ids
 
-  def initialize(data, connector)
+  def initialize(data, connection)
     self.data = data
-    self.connector = connector
+    self.connection = connection
     self.inserted_ids = {}
   end
 
@@ -87,14 +87,14 @@ class BioBase
   def record_exists(table_name, table_data)
     prepared_clauses = "name = #{table_data['name']}"
     command = "SELECT id FROM #{table_name} WHERE #{prepared_clauses}"
-    result = (self.connector.exec command).values
+    result = (self.connection.exec command).values
     return result
   end
 
   def make_record(table_name, table_data)
     values, fields = get_values_fields(table_name,table_data)
     command = "INSERT INTO #{table_name}(#{fields}) VALUES(#{values}) RETURNING id"
-    result = (self.connector.exec command).values
+    result = (self.connection.exec command).values
     return result
   end
 

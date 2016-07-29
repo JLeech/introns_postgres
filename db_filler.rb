@@ -1,20 +1,20 @@
-require 'pg'
 require_relative 'bio_parser'
 require_relative 'organism_parser'
+require_relative 'db_manager'
 class Dbfiller
 
   attr_accessor :organism_path
-  attr_accessor :connection
+  attr_accessor :db_manager
 
   def initialize (organism_path, db_name, user_name)
     self.organism_path = organism_path
-    self.connection = PG.connect :dbname => db_name, :user => user_name
+    self.db_manager = DbManager.new(db_name, user_name)
   end
 
   def load_organism
-    bio_parser = BioParser.new(organism_path,connection)
+    bio_parser = BioParser.new(organism_path,db_manager)
     additional_organism_data = bio_parser.parse
-    gbk_parser = OrganismParser.new(organism_path, additional_organism_data, connection)
+    gbk_parser = OrganismParser.new(organism_path, additional_organism_data, db_manager)
     gbk_parser.parse
   end
 

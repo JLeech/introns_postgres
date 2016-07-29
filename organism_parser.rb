@@ -11,17 +11,16 @@ class OrganismParser
   attr_accessor :organism_path
   attr_accessor :organism_data
   attr_accessor :id_tax_groups2
-  attr_accessor :connection
+  attr_accessor :db_manager
   attr_accessor :id_manager
 
 
-  # TODO connection to DbManager
   # IdManager - to rule one-thread ids
   # use for one gbk file in butch load
   def initialize(organism_path, additional_organism_data, connection)
     self.organism_path = organism_path
     self.organism_data = additional_organism_data
-    self.connection = connection
+    self.db_manager = db_manager
     self.id_manager = IdManager.new
   end
 
