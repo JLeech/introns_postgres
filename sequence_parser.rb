@@ -1,5 +1,7 @@
 require 'bio'
 
+#parse one sequence and start parsing genes
+
 class SequenceParser
 
   attr_accessor :data
@@ -16,19 +18,31 @@ class SequenceParser
     self.sequence_data["refseq_id"] = data.locus.entry_id
     self.sequence_data["version"] = data.versions.join("\n")
     self.sequence_data["description"] = data.definition
-    self.sequence_data["origin_file_name"] = "#{organism_name.downcase}/#{self.sequence_data["refseq_id"].downcase}.raw.txt"
-    
+    self.sequence_data["origin_file_name"] = origin_file_name 
     parse_genes
   end
 
-  def parse_genes
-    data.features.each_with_index do |feature, index|
-        if feature.feature == "source"
-          
-        end
 
+  # Suddenly parse gene in sequence parser.
+  # TODO move in separate class
+  def parse_genes
+    gene_data = {}
+    data.features.each_with_index do |feature, index|
+      if feature.feature == "gene"
+        feature_data = feature.assoc
+        gene_data["name"] = feature_data["gene"]
+        gene_data["pseudo_gene"] = !(feature_data.keys & ["pseudo","pseudogene"]).empty?
+        location = Bio::Locations.new(feature.position)
+        gene_data["startt"] = location.first.from
+        gene_data["endd"] = location.last.to
+        gene_data["backward_chain"] = -1 == location.first.strand
+
+      end
     end
   end
 
+  def origin_file_name
+    return "#{self.organism_name.downcase}/#{self.sequence_data["refseq_id"].downcase}.raw.txt"
+  end
 
 end

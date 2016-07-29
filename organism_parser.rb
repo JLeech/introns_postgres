@@ -14,6 +14,10 @@ class OrganismParser
   attr_accessor :connection
   attr_accessor :id_manager
 
+
+  # TODO connection to DbManager
+  # IdManager - to rule one-thread ids
+  # use for one gbk file in butch load
   def initialize(organism_path, additional_organism_data, connection)
     self.organism_path = organism_path
     self.organism_data = additional_organism_data
@@ -23,9 +27,11 @@ class OrganismParser
 
   def parse
     gbk_files = Dir["#{self.organism_path}/*"]
-    gbk_files.each { |file| parse_file(file) if file.end_with?("2.gbk") }
+    gbk_files.each { |file| parse_file(file) if file.end_with?("1.gbk") }
   end
 
+  # file_name, organism_name - necessary for fields in database
+  # gb - genbank data, one sequence
   def parse_file(file)
     file_name = File.basename(file, ".gbk")
     organism_name = File.basename(self.organism_path)
@@ -34,13 +40,14 @@ class OrganismParser
     gen_bank.each_entry do |gb|
       organism_data_from_gbk = gb.source
       organism_data[TAXONOMY_LIST] = organism_data_from_gbk["taxonomy"]
+      self.organism_data[TAXONOMY_XREF] = extract_taxonomy_xref(gb)
       sequence_parser = SequenceParser.new(gb, file_name, organism_name)
       sequence_parser.parse
-      self.organism_data[TAXONOMY_XREF] = extract_taxonomy_xref(gb)
     end
-    puts "#{organism_data}"
   end
 
+  # TODO implant this into one pass by features
+  # mb in SequenceParser
   def extract_taxonomy_xref(gen_bank)
     gen_bank.features.each do |feature|
       if feature.feature == "source"
