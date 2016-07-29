@@ -1,6 +1,8 @@
 require 'pg'
 
 # manage bulk loading and all db requests
+# no connections with other data, so just load all this staff
+# ids should be already generated
 class DbManager
 
   attr_accessor :connection
@@ -14,9 +16,8 @@ class DbManager
   end
 
   def fill_empty_fields
-    
-  end
 
+  end
 
 
 end

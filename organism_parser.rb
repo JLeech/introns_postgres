@@ -17,7 +17,7 @@ class OrganismParser
 
   # IdManager - to rule one-thread ids
   # use for one gbk file in butch load
-  def initialize(organism_path, additional_organism_data, connection)
+  def initialize(organism_path, additional_organism_data, db_manager)
     self.organism_path = organism_path
     self.organism_data = additional_organism_data
     self.db_manager = db_manager

@@ -65,7 +65,7 @@ class BioBase
     self.inserted_ids = {}
   end
 
-  # choose only tax data, because 'data' also store data 
+  # choose only tax data, because 'data' also store data
   # for organism table
   # return id for tax_groups2. Organism needs it to store relation
   def save!

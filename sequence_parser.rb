@@ -19,7 +19,7 @@ class SequenceParser
   end
 
   def parse
-    self.sequence_data["id"] = id_manager.inc_and_get_seq_id
+    self.sequence_data["id"] = id_manager.inc_and_get_id("sequences")
     self.sequence_data["refseq_id"] = data.locus.entry_id
     self.sequence_data["version"] = data.versions.join("\n")
     self.sequence_data["description"] = data.definition
@@ -46,19 +46,21 @@ class GeneParser
     self.id_manager = id_manager
   end
 
+  # TODO need connection to futher CDS and mRNA, to set start_code,end_code
+
   def parse_genes
     self.data.features.each_with_index do |feature, index|
       if feature.feature == "gene"
         gene_data = {}
         feature_data = feature.assoc
-        gene_data["id"] = id_manager.inc_and_get_gene_id
+        gene_data["id"] = id_manager.inc_and_get_id("genes")
         gene_data["name"] = feature_data["gene"]
         gene_data["pseudo_gene"] = !(feature_data.keys & ["pseudo","pseudogene"]).empty?
         location = Bio::Locations.new(feature.position)
         gene_data["startt"] = location.first.from
         gene_data["endd"] = location.last.to
-        gene_data["backward_chain"] = -1 == location.first.strand
-        #puts "#{gene_data}"
+        gene_data["backward_chain"] = location.first.strand == -1
+        puts "#{gene_data}"
       end
     end
   end
