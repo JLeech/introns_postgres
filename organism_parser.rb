@@ -1,4 +1,6 @@
 require 'bio'
+require_relative 'id_manager'
+require_relative 'sequence_parser'
 
 class OrganismParser
 
@@ -10,24 +12,30 @@ class OrganismParser
   attr_accessor :organism_data
   attr_accessor :id_tax_groups2
   attr_accessor :connection
+  attr_accessor :id_manager
 
   def initialize(organism_path, additional_organism_data, connection)
     self.organism_path = organism_path
     self.organism_data = additional_organism_data
     self.connection = connection
+    self.id_manager = IdManager.new
   end
 
   def parse
     gbk_files = Dir["#{self.organism_path}/*"]
-    gbk_files.each { |file| parse_file(file) if file.end_with?("1.gbk") }
+    gbk_files.each { |file| parse_file(file) if file.end_with?("2.gbk") }
   end
 
   def parse_file(file)
+    file_name = File.basename(file, ".gbk")
+    organism_name = File.basename(self.organism_path)
     arr = []
     gen_bank = Bio::GenBank.open(file)
     gen_bank.each_entry do |gb|
       organism_data_from_gbk = gb.source
       organism_data[TAXONOMY_LIST] = organism_data_from_gbk["taxonomy"]
+      sequence_parser = SequenceParser.new(gb, file_name, organism_name)
+      sequence_parser.parse
       self.organism_data[TAXONOMY_XREF] = extract_taxonomy_xref(gb)
     end
     puts "#{organism_data}"
