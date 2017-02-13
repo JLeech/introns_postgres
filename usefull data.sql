@@ -18,49 +18,20 @@ INSERT INTO weather (city, temp_lo, temp_hi, prcp, date)
 
 COPY weather FROM '/home/user/weather.txt';  - массовая загрузка из файла
 
-\d - show tables
-\l - show databases
-\d tablename - show table
+\d - таблицы
+\l - базы
+\d tablename - таблицы базы
 
 mysql < /home/introns/src/introns-db-fill/create_database.sql 
 
-62.325357156
-63.086076135
-61.1627809
-61.231626229
-61.743270996
-65.619521661
-65.335869113
-65.610424028
-65.500478927
-66.145599406
-65.520905505
-66.0982881
-65.188225304
-67.315481278
-66.426223683
-65.686573267
-65.392678879
-65.650356049
-65.545458462
-65.332289702
-66.170902836
-67.565894219
-65.32341517
-67.848249146
-67.455438885
-64.474841684
-63.720342573
-66.088418705
-63.86995224
-64.441304196
-64.729441846
-69.492770865
-67.720619926
-64.504311154
-64.101063941
-70.686779061
-70.585287035
-63.703333371
-63.598178177
-63.461658352
+sudo -u postgres psql - от рута
+
+psql -h localhost test postgres - c админскими правами
+psql -h localhost test pg - обычно
+
+DROP database template0 - удалить базу
+alter database template1 is_template false; - снять шаблонность с базы
+
+psql --host=localhost  --dbname=test --username=pg --password --file=create_database.sql создать таблицы
+
+scp eveleech@server4.lpm.org.ru:/home/introns/ftp_loader/organisms/chrs.txt chrs.txt

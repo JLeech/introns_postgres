@@ -1,43 +1,56 @@
-DROP TABLE IF EXISTS introns;
-DROP TABLE IF EXISTS exons;
-DROP TABLE IF EXISTS isoforms;
-DROP TABLE IF EXISTS orphaned_cdses;
-DROP TABLE IF EXISTS genes;
-DROP TABLE IF EXISTS sequences;
+
+DROP TABLE IF EXISTS intron_types;
+DROP TABLE IF EXISTS tax_kingdoms;
+DROP TABLE IF EXISTS tax_groups1;
+DROP TABLE IF EXISTS tax_groups2;
+DROP TABLE IF EXISTS orthologous_groups;
 DROP TABLE IF EXISTS organisms;
 DROP TABLE IF EXISTS chromosomes;
-DROP TABLE IF EXISTS intron_types;
-DROP TABLE IF EXISTS tax_groups2;
-DROP TABLE IF EXISTS tax_groups1;
-DROP TABLE IF EXISTS tax_kingdoms;
-DROP TABLE IF EXISTS orthologous_groups;
+DROP TABLE IF EXISTS sequences;
+DROP TABLE IF EXISTS orphaned_cdses;
+DROP TABLE IF EXISTS genes;
+DROP TABLE IF EXISTS isoforms;
+DROP TABLE IF EXISTS exons;
+DROP TABLE IF EXISTS introns;
+
+CREATE TABLE intron_types(
+    id INT UNIQUE NOT NULL,
+    representation VARCHAR(5) UNIQUE NOT NULL 
+);
 
 CREATE TABLE tax_kingdoms(
-    id serial PRIMARY KEY,
+    id INT UNIQUE NOT NULL,
     name VARCHAR(30) UNIQUE NOT NULL
 );
 
 CREATE TABLE tax_groups1(
-    id serial PRIMARY KEY,
+    id INT UNIQUE NOT NULL,
     id_tax_kingdoms INT NOT NULL,
     name VARCHAR(30) UNIQUE NOT NULL,
     typee VARCHAR(500)
 );
 
 CREATE TABLE tax_groups2(
-    id serial PRIMARY KEY,
+    id INT UNIQUE NOT NULL,
     id_tax_groups1 INT NOT NULL,
     id_tax_kingdoms INT NOT NULL,
     name VARCHAR(30) UNIQUE NOT NULL,
     typee VARCHAR(500)
 );
 
+CREATE TABLE orthologous_groups(
+    id INT UNIQUE NOT NULL,
+    name VARCHAR(30),
+    full_name VARCHAR(100)
+);
 
 CREATE TABLE organisms(
-    id serial PRIMARY KEY,
+    id INT UNIQUE NOT NULL,
     name VARCHAR(200) NOT NULL,
+    common_name VARCHAR(200) NOT NULL,
     ref_seq_assembly_id VARCHAR(20),
     annotation_release VARCHAR(200),
+    annotation_date date,
     taxonomy_xref VARCHAR(50),
     taxonomy_list VARCHAR(500),
     id_tax_groups2 INT,
@@ -57,7 +70,15 @@ CREATE TABLE organisms(
     introns_count INT DEFAULT 0
 );
 
+CREATE TABLE chromosomes(
+    id INT UNIQUE NOT NULL,
+    id_organisms INT,
+    name VARCHAR(20),
+    lengthh INT
+);
+
 CREATE TABLE sequences(
+    id INT UNIQUE NOT NULL,
     source_file_name VARCHAR(50),
     refseq_id VARCHAR(20),
     version VARCHAR(50),
@@ -65,10 +86,22 @@ CREATE TABLE sequences(
     lengthh INT NOT NULL DEFAULT 0,
     id_organisms INT NOT NULL,
     id_chromosomes INT,
-    origin_file_name VARCHAR(100)
+    origin_file_name VARCHAR(100),
+    gbk_date date
+);
+
+CREATE TABLE orphaned_cdses(
+    id INT UNIQUE NOT NULL,
+    source_file_name VARCHAR(50),
+    source_line_start INT NOT NULL,
+    source_line_end INT NOT NULL,
+    refseq_id VARCHAR(20) NOT NULL,
+    protein_xref VARCHAR(40),
+    product VARCHAR(200)
 );
 
 CREATE TABLE genes(
+    id INT UNIQUE NOT NULL,
     id_organisms INT NOT NULL,
     id_sequences INT NOT NULL,
     id_orthologous_groups INT,
@@ -84,6 +117,7 @@ CREATE TABLE genes(
 );
 
 create TABLE isoforms(
+    id INT UNIQUE NOT NULL,
     id_genes INT NOT NULL,
     id_sequences INT NOT NULL,
     protein_xref VARCHAR(40),
@@ -112,6 +146,7 @@ create TABLE isoforms(
 );
 
 create TABLE exons(
+    id INT UNIQUE NOT NULL,
     id_isoforms INT NOT NULL,
     id_genes INT NOT NULL,
     id_sequences INT NOT NULL,
@@ -136,6 +171,7 @@ create TABLE exons(
 );
 
 create TABLE introns(
+    id INT UNIQUE NOT NULL,
     id_isoforms INT NOT NULL,
     id_genes INT NOT NULL,
     id_sequences INT NOT NULL,

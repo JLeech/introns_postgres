@@ -1,0 +1,13 @@
+copy intron_types from '/home/eve/Documents/postgres_filler/Anolis_carolinensis/intron_types_fix.csv' WITH DELIMITER AS ',' CSV;
+copy tax_kingdoms from '/home/eve/Documents/postgres_filler/Anolis_carolinensis/tax_kingdoms_fix.csv' WITH DELIMITER AS ',' CSV;
+copy tax_groups1 from '/home/eve/Documents/postgres_filler/Anolis_carolinensis/tax_groups1_fix.csv' WITH DELIMITER AS ',' CSV;
+copy tax_groups2 from '/home/eve/Documents/postgres_filler/Anolis_carolinensis/tax_groups2_fix.csv' WITH DELIMITER AS ',' CSV;
+copy orthologous_groups from '/home/eve/Documents/postgres_filler/Anolis_carolinensis/orthologous_groups_fix.csv' WITH DELIMITER AS ',' CSV;
+copy organisms from '/home/eve/Documents/postgres_filler/Anolis_carolinensis/organisms_fix.csv' WITH DELIMITER AS ',' CSV;
+copy chromosomes from '/home/eve/Documents/postgres_filler/Anolis_carolinensis/chromosomes_fix.csv' WITH DELIMITER AS ',' CSV;
+copy sequences from '/home/eve/Documents/postgres_filler/Anolis_carolinensis/sequences_fix.csv' WITH DELIMITER AS ',' CSV;
+copy orphaned_cdses from '/home/eve/Documents/postgres_filler/Anolis_carolinensis/orphaned_cdses_fix.csv' WITH DELIMITER AS ',' CSV;
+copy genes from '/home/eve/Documents/postgres_filler/Anolis_carolinensis/genes_fix.csv' WITH DELIMITER AS ',' CSV;
+copy isoforms from '/home/eve/Documents/postgres_filler/Anolis_carolinensis/isoforms_fix.csv' WITH DELIMITER AS ',' CSV;
+copy exons from '/home/eve/Documents/postgres_filler/Anolis_carolinensis/exons_fix.csv' WITH DELIMITER AS ',' CSV;
+copy introns from '/home/eve/Documents/postgres_filler/Anolis_carolinensis/introns_fix.csv' WITH DELIMITER AS ',' CSV;
