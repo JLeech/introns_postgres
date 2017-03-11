@@ -13,6 +13,8 @@ DROP TABLE IF EXISTS isoforms;
 DROP TABLE IF EXISTS exons;
 DROP TABLE IF EXISTS introns;
 
+DROP TABLE IF EXISTS org_stats;
+
 CREATE TABLE intron_types(
     id INT UNIQUE NOT NULL,
     representation VARCHAR(5) UNIQUE NOT NULL 
@@ -96,7 +98,7 @@ CREATE TABLE orphaned_cdses(
     source_line_start INT NOT NULL,
     source_line_end INT NOT NULL,
     refseq_id VARCHAR(20) NOT NULL,
-    protein_xref VARCHAR(40),
+    ncbi_gi VARCHAR(100),
     product VARCHAR(200)
 );
 
@@ -106,7 +108,7 @@ CREATE TABLE genes(
     id_sequences INT NOT NULL,
     id_orthologous_groups INT,
     name VARCHAR(40),
-    ncbi_gene_id VARCHAR(20),
+    ncbi_gene_id VARCHAR(100),
     backward_chain BOOLEAN DEFAULT FALSE,
     protein_but_not_rna BOOLEAN,
     pseudo_gene BOOLEAN,
@@ -197,4 +199,21 @@ create TABLE introns(
     error_main BOOLEAN NOT NULL DEFAULT FALSE,
 
     warning_n_in_sequence BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+create TABLE org_stats(
+    name VARCHAR(200) NOT NULL,
+    version VARCHAR(200),
+    annot_date date,
+    gene_count INT,
+    iso_count INT,
+    exon_count INT,
+    intron_count INT,
+    intron_with_error INT,
+    phase_0_count INT,
+    phase_1_count INT,
+    phase_2_count INT,
+    phase_0_persent REAL,
+    phase_1_persent REAL,
+    phase_2_persent REAL
 );

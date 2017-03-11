@@ -11,3 +11,6 @@ Musa_acuminata/
 mm_ref_GRCm38.p4_chr10.gbk
 res.tar.gz
 usefull_data.sql
+test_fill
+orthogroups_info_tables/
+intron_types.csv
