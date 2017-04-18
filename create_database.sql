@@ -14,6 +14,7 @@ DROP TABLE IF EXISTS exons;
 DROP TABLE IF EXISTS introns;
 
 DROP TABLE IF EXISTS org_stats;
+DROP TABLE IF EXISTS gene_stats;
 
 CREATE TABLE intron_types(
     id INT UNIQUE NOT NULL,
@@ -75,7 +76,7 @@ CREATE TABLE organisms(
 CREATE TABLE chromosomes(
     id INT UNIQUE NOT NULL,
     id_organisms INT,
-    name VARCHAR(20),
+    name VARCHAR(50),
     lengthh INT
 );
 
@@ -98,7 +99,7 @@ CREATE TABLE orphaned_cdses(
     source_line_start INT NOT NULL,
     source_line_end INT NOT NULL,
     refseq_id VARCHAR(20) NOT NULL,
-    ncbi_gi VARCHAR(100),
+    ncbi_gi VARCHAR(200),
     product VARCHAR(200)
 );
 

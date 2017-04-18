@@ -4,16 +4,20 @@ require 'csv'
 class IdManager
 
   attr_accessor :redis
+  attr_accessor :state_path
+
 
   def initialize
     self.redis = Redis.new
+    self.state_path = "/home/eve/Documents/introns_postgres/state.csv"
   end
 
-  def clear_result_dir
-    `rm /home/eve/Documents/postgres_filler/res/*`
+  def self.clear_result_dir
+    `rm /home/eve/Documents/introns_postgres/from_db/res/*`
   end
 
-  def set_counters
+  def set_counters()
+    self.redis.flushall
     self.redis.set("max_id_intron_types",0)
     self.redis.set("max_id_tax_kingdoms",0)
     self.redis.set("max_id_tax_groups1",0)
@@ -27,7 +31,40 @@ class IdManager
     self.redis.set("max_id_isoforms",0)
     self.redis.set("max_id_exons",0)
     self.redis.set("max_id_introns",0)
+  end
+
+  def save_state
+    File.open(self.state_path, 'w') do |state_csv|
+      state_csv.write(["max_id_intron_types",self.redis.get("max_id_intron_types")].join(",") + "\n")
+      state_csv.write(["max_id_tax_kingdoms",self.redis.get("max_id_tax_kingdoms")].join(",") + "\n")
+      state_csv.write(["max_id_tax_groups1",self.redis.get("max_id_tax_groups1")].join(",") + "\n")
+      state_csv.write(["max_id_tax_groups2",self.redis.get("max_id_tax_groups2")].join(",") + "\n")
+      state_csv.write(["max_id_orthologous_groups",self.redis.get("max_id_orthologous_groups")].join(",") + "\n")
+      state_csv.write(["max_id_organisms",self.redis.get("max_id_organisms")].join(",") + "\n")
+      state_csv.write(["max_id_chromosomes",self.redis.get("max_id_chromosomes")].join(",") + "\n")
+      state_csv.write(["max_id_sequences",self.redis.get("max_id_sequences")].join(",") + "\n")
+      state_csv.write(["max_id_orphaned_cdses",self.redis.get("max_id_orphaned_cdses")].join(",") + "\n")
+      state_csv.write(["max_id_genes",self.redis.get("max_id_genes")].join(",") + "\n")
+      state_csv.write(["max_id_isoforms",self.redis.get("max_id_isoforms")].join(",") + "\n")
+      state_csv.write(["max_id_exons",self.redis.get("max_id_exons")].join(",") + "\n")
+      state_csv.write(["max_id_introns",self.redis.get("max_id_introns")].join(",") + "\n")
+      
+      keys = redis.keys
+      keys.keep_if { |key| (key.start_with?("kingdoms_") || key.start_with?("group_1_") || key.start_with?("group_2_") ) }
+      keys.each do |key|
+        state_csv.write([key, self.redis.get(key)].join(",")+"\n") 
+      end
+    end
     self.redis.flushall
+  end
+
+  def load_state
+    state_empty = true
+    CSV.foreach(self.state_path, headers: false) do |row|
+      self.redis.set(row[0], row[1])
+      state_empty = false
+    end
+    set_counters if state_empty
   end
 
   def fix_tax_kingdoms(path)
@@ -285,103 +322,40 @@ class IdManager
 
 end
 
-st = Time.now
 
-manager = IdManager.new
-manager.set_counters
-manager.clear_result_dir
+from_db_path = '/home/eve/Documents/introns_postgres/from_db'
+Dir.chdir(from_db_path)
+folders = Dir.glob('*').select {|f| File.directory? f}
 
-f1 = Time.now
+state = {}
+IdManager.clear_result_dir
 
-puts "#{(f1-st).round(2)}"
-puts "starting"
+folders.sort.each_with_index do |folder_name, index|
 
-manager.fix_tax_kingdoms("/home/eve/Documents/postgres_filler/Anolis_carolinensis/tax_kingdoms.csv")
-manager.fix_tax_groups_1("/home/eve/Documents/postgres_filler/Anolis_carolinensis/tax_groups1.csv")
-manager.fix_tax_groups_2("/home/eve/Documents/postgres_filler/Anolis_carolinensis/tax_groups2.csv")
-manager.fix_organism("/home/eve/Documents/postgres_filler/Anolis_carolinensis/organisms.csv")
-manager.fix_chromosomes("/home/eve/Documents/postgres_filler/Anolis_carolinensis/chromosomes.csv")
-manager.fix_sequences("/home/eve/Documents/postgres_filler/Anolis_carolinensis/sequences.csv")
-manager.fix_orphaned_cds("/home/eve/Documents/postgres_filler/Anolis_carolinensis/orphaned_cdses.csv")
-manager.fix_genes("/home/eve/Documents/postgres_filler/Anolis_carolinensis/genes.csv")
-manager.fix_isoforms("/home/eve/Documents/postgres_filler/Anolis_carolinensis/isoforms.csv")
-manager.fix_exons("/home/eve/Documents/postgres_filler/Anolis_carolinensis/exons.csv")
-manager.fix_introns("/home/eve/Documents/postgres_filler/Anolis_carolinensis/introns.csv")
-manager.fix_exons_prev("/home/eve/Documents/postgres_filler/Anolis_carolinensis/exons.csv")
-manager.fix_introns_prev("/home/eve/Documents/postgres_filler/Anolis_carolinensis/introns.csv")
+  f1 = Time.now
+  puts "#{index+1}/#{folders.length} : #{folder_name}"
 
-f2 = Time.now
-puts "#{(f2-f1).round(2)}"
-puts "Anolis ready"
+  manager = IdManager.new
+  manager.load_state
+  next if !File.exists?("#{from_db_path}/#{folder_name}/tax_kingdoms.csv")
+  next if folder_name == "res"
+  manager.fix_tax_kingdoms("#{from_db_path}/#{folder_name}/tax_kingdoms.csv")
+  manager.fix_tax_groups_1("#{from_db_path}/#{folder_name}/tax_groups1.csv")
+  manager.fix_tax_groups_2("#{from_db_path}/#{folder_name}/tax_groups2.csv")
+  manager.fix_organism("#{from_db_path}/#{folder_name}/organisms.csv")
+  manager.fix_chromosomes("#{from_db_path}/#{folder_name}/chromosomes.csv")
+  manager.fix_sequences("#{from_db_path}/#{folder_name}/sequences.csv")
+  manager.fix_orphaned_cds("#{from_db_path}/#{folder_name}/orphaned_cdses.csv")
+  manager.fix_genes("#{from_db_path}/#{folder_name}/genes.csv")
+  manager.fix_isoforms("#{from_db_path}/#{folder_name}/isoforms.csv")
+  manager.fix_exons("#{from_db_path}/#{folder_name}/exons.csv")
+  manager.fix_introns("#{from_db_path}/#{folder_name}/introns.csv")
+  manager.fix_exons_prev("#{from_db_path}/#{folder_name}/exons.csv")
+  manager.fix_introns_prev("#{from_db_path}/#{folder_name}/introns.csv")
 
-manager.fix_tax_kingdoms("/home/eve/Documents/postgres_filler/Mus_musculus/tax_kingdoms.csv")
-manager.fix_tax_groups_1("/home/eve/Documents/postgres_filler/Mus_musculus/tax_groups1.csv")
-manager.fix_tax_groups_2("/home/eve/Documents/postgres_filler/Mus_musculus/tax_groups2.csv")
-manager.fix_organism("/home/eve/Documents/postgres_filler/Mus_musculus/organisms.csv")
-manager.fix_chromosomes("/home/eve/Documents/postgres_filler/Mus_musculus/chromosomes.csv")
-manager.fix_sequences("/home/eve/Documents/postgres_filler/Mus_musculus/sequences.csv")
-manager.fix_orphaned_cds("/home/eve/Documents/postgres_filler/Mus_musculus/orphaned_cdses.csv")
-manager.fix_genes("/home/eve/Documents/postgres_filler/Mus_musculus/genes.csv")
-manager.fix_isoforms("/home/eve/Documents/postgres_filler/Mus_musculus/isoforms.csv")
-manager.fix_exons("/home/eve/Documents/postgres_filler/Mus_musculus/exons.csv")
-manager.fix_introns("/home/eve/Documents/postgres_filler/Mus_musculus/introns.csv")
-manager.fix_exons_prev("/home/eve/Documents/postgres_filler/Mus_musculus/exons.csv")
-manager.fix_introns_prev("/home/eve/Documents/postgres_filler/Mus_musculus/introns.csv")
+  f2 = Time.now
+  puts "time: #{((f2-f1)/60.0).round(2)}"
 
-f3 = Time.now
-puts "#{(f3-f2).round(2)}"
-puts "Mus ready"
+  manager.save_state
 
-manager.fix_tax_kingdoms("/home/eve/Documents/postgres_filler/Musa_acuminata/tax_kingdoms.csv")
-manager.fix_tax_groups_1("/home/eve/Documents/postgres_filler/Musa_acuminata/tax_groups1.csv")
-manager.fix_tax_groups_2("/home/eve/Documents/postgres_filler/Musa_acuminata/tax_groups2.csv")
-manager.fix_organism("/home/eve/Documents/postgres_filler/Musa_acuminata/organisms.csv")
-manager.fix_chromosomes("/home/eve/Documents/postgres_filler/Musa_acuminata/chromosomes.csv")
-manager.fix_sequences("/home/eve/Documents/postgres_filler/Musa_acuminata/sequences.csv")
-manager.fix_orphaned_cds("/home/eve/Documents/postgres_filler/Musa_acuminata/orphaned_cdses.csv")
-manager.fix_genes("/home/eve/Documents/postgres_filler/Musa_acuminata/genes.csv")
-manager.fix_isoforms("/home/eve/Documents/postgres_filler/Musa_acuminata/isoforms.csv")
-manager.fix_exons("/home/eve/Documents/postgres_filler/Musa_acuminata/exons.csv")
-manager.fix_introns("/home/eve/Documents/postgres_filler/Musa_acuminata/introns.csv")
-manager.fix_exons_prev("/home/eve/Documents/postgres_filler/Musa_acuminata/exons.csv")
-manager.fix_introns_prev("/home/eve/Documents/postgres_filler/Musa_acuminata/introns.csv")
-
-f4 = Time.now
-puts "#{(f4-f3).round(2)}"
-puts "Musa ready"
-
-manager.fix_tax_kingdoms("/home/eve/Documents/postgres_filler/Homo_sapiens/tax_kingdoms.csv")
-manager.fix_tax_groups_1("/home/eve/Documents/postgres_filler/Homo_sapiens/tax_groups1.csv")
-manager.fix_tax_groups_2("/home/eve/Documents/postgres_filler/Homo_sapiens/tax_groups2.csv")
-manager.fix_organism("/home/eve/Documents/postgres_filler/Homo_sapiens/organisms.csv")
-manager.fix_chromosomes("/home/eve/Documents/postgres_filler/Homo_sapiens/chromosomes.csv")
-manager.fix_sequences("/home/eve/Documents/postgres_filler/Homo_sapiens/sequences.csv")
-manager.fix_orphaned_cds("/home/eve/Documents/postgres_filler/Homo_sapiens/orphaned_cdses.csv")
-manager.fix_genes("/home/eve/Documents/postgres_filler/Homo_sapiens/genes.csv")
-manager.fix_isoforms("/home/eve/Documents/postgres_filler/Homo_sapiens/isoforms.csv")
-manager.fix_exons("/home/eve/Documents/postgres_filler/Homo_sapiens/exons.csv")
-manager.fix_introns("/home/eve/Documents/postgres_filler/Homo_sapiens/introns.csv")
-manager.fix_exons_prev("/home/eve/Documents/postgres_filler/Homo_sapiens/exons.csv")
-manager.fix_introns_prev("/home/eve/Documents/postgres_filler/Homo_sapiens/introns.csv")
-
-f5 = Time.now
-puts "#{(f5-f4).round(2)}"
-puts "Homo ready"
-
-manager.fix_tax_kingdoms("/home/eve/Documents/postgres_filler/Apis_mellifera/tax_kingdoms.csv")
-manager.fix_tax_groups_1("/home/eve/Documents/postgres_filler/Apis_mellifera/tax_groups1.csv")
-manager.fix_tax_groups_2("/home/eve/Documents/postgres_filler/Apis_mellifera/tax_groups2.csv")
-manager.fix_organism("/home/eve/Documents/postgres_filler/Apis_mellifera/organisms.csv")
-manager.fix_chromosomes("/home/eve/Documents/postgres_filler/Apis_mellifera/chromosomes.csv")
-manager.fix_sequences("/home/eve/Documents/postgres_filler/Apis_mellifera/sequences.csv")
-manager.fix_orphaned_cds("/home/eve/Documents/postgres_filler/Apis_mellifera/orphaned_cdses.csv")
-manager.fix_genes("/home/eve/Documents/postgres_filler/Apis_mellifera/genes.csv")
-manager.fix_isoforms("/home/eve/Documents/postgres_filler/Apis_mellifera/isoforms.csv")
-manager.fix_exons("/home/eve/Documents/postgres_filler/Apis_mellifera/exons.csv")
-manager.fix_introns("/home/eve/Documents/postgres_filler/Apis_mellifera/introns.csv")
-manager.fix_exons_prev("/home/eve/Documents/postgres_filler/Apis_mellifera/exons.csv")
-manager.fix_introns_prev("/home/eve/Documents/postgres_filler/Apis_mellifera/introns.csv")
-
-f6 = Time.now
-puts "#{(f6-f5).round(2)}"
-puts "Apis ready"
+end

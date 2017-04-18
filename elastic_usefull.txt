@@ -1,0 +1,15 @@
+GET /_cat/indices?v - show all indexes
+
+PUT /customer?pretty - create index
+
+write data to index
+PUT /customer/external/1?pretty
+{
+  "name": "John Doe"
+}
+
+get data by id
+GET /customer/external/1?pretty
+
+delete index
+DELETE /customer?pretty

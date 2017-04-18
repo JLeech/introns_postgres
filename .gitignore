@@ -14,3 +14,5 @@ usefull_data.sql
 test_fill
 orthogroups_info_tables/
 intron_types.csv
+*.csv
+*.tar.gz
