@@ -30,7 +30,13 @@ class IdManager
     self.redis.set("max_id_genes",0)
     self.redis.set("max_id_isoforms",0)
     self.redis.set("max_id_exons",0)
+    self.redis.set("max_id_real_exons",0)
     self.redis.set("max_id_introns",0)
+  end
+
+  def self.clear_state
+    state_path = "/home/eve/Documents/introns_postgres/state.csv"
+    File.write(state_path,"")
   end
 
   def save_state
@@ -47,6 +53,7 @@ class IdManager
       state_csv.write(["max_id_genes",self.redis.get("max_id_genes")].join(",") + "\n")
       state_csv.write(["max_id_isoforms",self.redis.get("max_id_isoforms")].join(",") + "\n")
       state_csv.write(["max_id_exons",self.redis.get("max_id_exons")].join(",") + "\n")
+      state_csv.write(["max_id_real_exons",self.redis.get("max_id_real_exons")].join(",") + "\n")
       state_csv.write(["max_id_introns",self.redis.get("max_id_introns")].join(",") + "\n")
       
       keys = redis.keys
@@ -143,6 +150,7 @@ class IdManager
           redis.set("#{org_name}_organism_#{row[0]}",new_id)
         end
         row[0] = new_id
+        row[2] = row[2][0].upcase+row[2][1..(-1)]
         (1..7).each {|index| row[index] = "\"#{row[index]}\"" }
         row[8] = redis.get("group_2_#{row[8]}")
         csv.write(row.join(",")+"\n")
@@ -254,6 +262,24 @@ class IdManager
     end
   end
 
+  def fix_real_exons(path)
+    org_name = File.dirname(path).split("/").last
+    result_path = ( path.split("/")[0..-3] + ["res"]).join("/") + "/#{File.basename(path)}"
+    File.open("#{result_path}", 'w') do |csv|
+      CSV.foreach(path, headers: false) do |row|
+        new_id = redis.get("#{org_name}_real_exon_#{row[0]}")
+        if new_id.nil?
+          new_id = redis.incrby("max_id_real_exons",1)
+          redis.set("#{org_name}_real_exon_#{row[0]}",new_id)
+        end
+        row[0] = new_id
+        row[1] = redis.get("#{org_name}_gene_#{row[1]}")
+        row[2] = redis.get("#{org_name}_sequence_#{row[2]}")
+        csv.write(row.join(",")+"\n")
+      end
+    end
+  end
+
   def fix_exons(path)
     org_name = File.dirname(path).split("/").last
     result_path = ( path.split("/")[0..-3] + ["res"]).join("/") + "/#{File.basename(path)}"
@@ -268,6 +294,7 @@ class IdManager
         row[1] = redis.get("#{org_name}_isoform_#{row[1]}")
         row[2] = redis.get("#{org_name}_gene_#{row[2]}")
         row[3] = redis.get("#{org_name}_sequence_#{row[3]}")
+        row[4] = redis.get("#{org_name}_real_exon_#{row[4]}")
         csv.write(row.join(",")+"\n")
       end
     end
@@ -297,10 +324,10 @@ class IdManager
     result_path = ( path.split("/")[0..-3] + ["res"]).join("/") + "/#{File.basename(path)}"
     File.open(result_path, 'a') do |csv|
       CSV.foreach("#{result_path}_f", headers: false) do |row|
-        row[15] = row[15] == "0" ? 0 : redis.get("#{org_name}_intron_#{row[15]}")
         row[16] = row[16] == "0" ? 0 : redis.get("#{org_name}_intron_#{row[16]}")
-        row[13] = "\"#{row[13]}\""
+        row[17] = row[17] == "0" ? 0 : redis.get("#{org_name}_intron_#{row[17]}")
         row[14] = "\"#{row[14]}\""
+        row[15] = "\"#{row[15]}\""
         csv.write(row.join(",")+"\n")
       end
     end
@@ -325,12 +352,15 @@ end
 
 from_db_path = '/home/eve/Documents/introns_postgres/from_db'
 Dir.chdir(from_db_path)
-folders = Dir.glob('*').select {|f| File.directory? f}
+folders = Dir.glob('*').select {|f| File.directory? f}.sort
 
 state = {}
 IdManager.clear_result_dir
+IdManager.clear_state
 
-folders.sort.each_with_index do |folder_name, index|
+# ["Drosophila_busckii","Cucumis_sativus"]
+
+folders.each_with_index do |folder_name, index|
 
   f1 = Time.now
   puts "#{index+1}/#{folders.length} : #{folder_name}"
@@ -348,6 +378,7 @@ folders.sort.each_with_index do |folder_name, index|
   manager.fix_orphaned_cds("#{from_db_path}/#{folder_name}/orphaned_cdses.csv")
   manager.fix_genes("#{from_db_path}/#{folder_name}/genes.csv")
   manager.fix_isoforms("#{from_db_path}/#{folder_name}/isoforms.csv")
+  manager.fix_real_exons("#{from_db_path}/#{folder_name}/real_exons.csv")
   manager.fix_exons("#{from_db_path}/#{folder_name}/exons.csv")
   manager.fix_introns("#{from_db_path}/#{folder_name}/introns.csv")
   manager.fix_exons_prev("#{from_db_path}/#{folder_name}/exons.csv")
@@ -357,5 +388,6 @@ folders.sort.each_with_index do |folder_name, index|
   puts "time: #{((f2-f1)/60.0).round(2)}"
 
   manager.save_state
-
 end
+
+

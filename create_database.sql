@@ -12,9 +12,11 @@ DROP TABLE IF EXISTS genes;
 DROP TABLE IF EXISTS isoforms;
 DROP TABLE IF EXISTS exons;
 DROP TABLE IF EXISTS introns;
+DROP TABLE IF EXISTS real_exons;
 
-DROP TABLE IF EXISTS org_stats;
-DROP TABLE IF EXISTS gene_stats;
+DROP TABLE IF EXISTS genes_orgs;
+DROP TABLE IF EXISTS genes_ncbis;
+DROP TABLE IF EXISTS reports;
 
 CREATE TABLE intron_types(
     id INT UNIQUE NOT NULL,
@@ -98,7 +100,7 @@ CREATE TABLE orphaned_cdses(
     source_file_name VARCHAR(50),
     source_line_start INT NOT NULL,
     source_line_end INT NOT NULL,
-    refseq_id VARCHAR(20) NOT NULL,
+    refseq_id VARCHAR(100) NOT NULL,
     ncbi_gi VARCHAR(200),
     product VARCHAR(200)
 );
@@ -139,12 +141,10 @@ create TABLE isoforms(
     start_codon VARCHAR(3),
     end_codon VARCHAR(3),
     maximum_by_introns BOOLEAN,
-
+    has_no_exons BOOLEAN,
     error_in_length BOOLEAN NOT NULL DEFAULT FALSE,
-    error_in_start_codon BOOLEAN NOT NULL DEFAULT FALSE,
-    error_in_end_codon BOOLEAN NOT NULL DEFAULT FALSE,
-    error_in_intron BOOLEAN NOT NULL DEFAULT FALSE,
-    error_in_coding_exon BOOLEAN NOT NULL DEFAULT FALSE,
+    warning_in_intron BOOLEAN NOT NULL DEFAULT FALSE,
+    warning_in_coding_exon BOOLEAN NOT NULL DEFAULT FALSE,
     error_main BOOLEAN NOT NULL DEFAULT FALSE,
     error_comment TEXT
 );
@@ -154,6 +154,7 @@ create TABLE exons(
     id_isoforms INT NOT NULL,
     id_genes INT NOT NULL,
     id_sequences INT NOT NULL,
+    real_exon_id INT NOT NULL,
 
     startt INT NOT NULL,
     endd INT NOT NULL,
@@ -170,8 +171,18 @@ create TABLE exons(
     prev_intron INT DEFAULT 0,
     next_intron INT DEFAULT 0,
 
-    error_in_pseudo_flag BOOLEAN NOT NULL DEFAULT FALSE,
-    error_n_in_sequence BOOLEAN NOT NULL DEFAULT FALSE
+    from_main_isoform BOOLEAN NOT NULL DEFAULT FALSE,
+    error_in_isoform BOOLEAN NOT NULL DEFAULT FALSE,
+    warning_n_in_sequence BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+create TABLE real_exons(
+    id INT UNIQUE NOT NULL,
+    id_genes INT NOT NULL,
+    id_sequences INT NOT NULL,
+    
+    startt INT NOT NULL,
+    endd INT NOT NULL
 );
 
 create TABLE introns(
@@ -195,26 +206,36 @@ create TABLE introns(
     length_phase SMALLINT,
     phase SMALLINT,
 
-    error_start_dinucleotide BOOLEAN NOT NULL DEFAULT FALSE,
-    error_end_dinucleotide BOOLEAN NOT NULL DEFAULT FALSE,
+    from_main_isoform BOOLEAN NOT NULL DEFAULT FALSE,
+
+    warning_start_dinucleotide BOOLEAN NOT NULL DEFAULT FALSE,
+    warning_end_dinucleotide BOOLEAN NOT NULL DEFAULT FALSE,
     error_main BOOLEAN NOT NULL DEFAULT FALSE,
+    error_in_isoform BOOLEAN NOT NULL DEFAULT FALSE,
 
     warning_n_in_sequence BOOLEAN NOT NULL DEFAULT FALSE
 );
 
-create TABLE org_stats(
-    name VARCHAR(200) NOT NULL,
-    version VARCHAR(200),
-    annot_date date,
-    gene_count INT,
-    iso_count INT,
-    exon_count INT,
-    intron_count INT,
-    intron_with_error INT,
-    phase_0_count INT,
-    phase_1_count INT,
-    phase_2_count INT,
-    phase_0_persent REAL,
-    phase_1_persent REAL,
-    phase_2_persent REAL
+CREATE TABLE genes_orgs(
+    id INT UNIQUE NOT NULL,
+    name VARCHAR(25) UNIQUE NOT NULL,
+    id_organisms TEXT
+);
+
+CREATE TABLE genes_ncbis(
+    id INT UNIQUE NOT NULL,
+    ncbi_id VARCHAR(10) UNIQUE NOT NULL,
+    id_organisms TEXT
+);
+
+CREATE TABLE reports(
+    ID  SERIAL PRIMARY KEY,
+    uuid UUID,
+    start_time TIMESTAMP,
+    state VARCHAR(20),
+    report_type VARCHAR(10),
+    request TEXT,
+    error_text TEXT,
+    load_times INT DEFAULT 0,
+    email TEXT
 );

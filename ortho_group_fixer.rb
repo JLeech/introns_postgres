@@ -69,42 +69,59 @@ require 'csv'
 
 class OrthoGroupSetter
 
-	attr_accessor :ortho_gr
+	attr_accessor :ortho_counter
 	attr_accessor :ortho_hash
 
 	def initialize(ortho_path)
-		self.ortho_hash = Hash.new { |hash, key| hash[key] = -1 }
-		self.ortho_gr = Hash.new { |hash, key| hash[key] = -1 }
+		self.ortho_counter = Hash.new { |hash, key| hash[key] = 0 }
+		self.ortho_hash = Hash.new { |hash, key| hash[key] = false }
 		CSV.foreach(ortho_path, headers: false, col_sep: ";") do |row| 
 			ortho_hash[row[1]] = row[2]
-			ortho_gr[row[2]] = 0
+			ortho_counter[row[2]] = 0
 		end
 	end
 
-	def set_ortho(path, folder)
+	def set_ortho(path)
 
 		gene_hash = Hash.new { |hash, key| hash[key] = 0 }
-		
-		CSV.foreach("#{path}/genes.csv", headers: false) { |row| gene_hash[row[5]] = 1 }
-
-		puts "#{folder.ljust(25)}: #{(ortho_hash.keys & gene_hash.keys).length}/#{ortho_gr.keys.length}"
+		counter = 0
+		fixed_gene_path = "#{path}/fixed_genes.csv"
+		File.open(fixed_gene_path, 'a') do |csv|
+			CSV.foreach("#{path}/genes.csv", headers: false) do |row| 
+				if ortho_hash[row[5]] != false
+					ortho_counter[ortho_hash[row[5]]] += 1
+					row[3] = ortho_hash[row[5]]
+				end
+				row[4] = "\"#{row[4]}\""
+        		row[5] = "\"#{row[5]}\""
+        		csv.write(row.join(",")+"\n")
+				
+				puts "#{counter}/1096698" if counter%100000 == 0
+				counter += 1
+			end
+		end
 		#puts "N: #{(ortho_gr.keys.length - (ortho_hash.keys & gene_hash.keys).length)}"
+	end
+
+	def set_ortho_res_genes(path)
+		CSV.foreach("#{path}/genes.csv", headers: false) { |row| ortho_hash[row[5]] += 1 }
 	end
 
 end
 
-res_path = '/home/eve/Documents/introns_postgres/from_db/'
+res_path = '/home/eve/Documents/introns_postgres/from_db/res'
 ortho_path = '/home/eve/Documents/introns_postgres/common_ortho_table.csv'
 
 ortho_setter = OrthoGroupSetter.new(ortho_path)
+ortho_setter.set_ortho(res_path)
 
-Dir.chdir(res_path)
-folders = Dir.glob('*').select {|f| File.directory? f}
-folders.sort.each do |folder|
-	next if !File.exist?("#{folder}/genes.csv")
-	next if folder == "res"
-	ortho_setter.set_ortho("#{res_path}/#{folder}", folder)
-end
+# Dir.chdir(res_path)
+# folders = Dir.glob('*').select {|f| File.directory? f}
+# folders.sort.each do |folder|
+# 	next if !File.exist?("#{folder}/genes.csv")
+# 	next if folder == "res"
+	
+# end
 
 
 
